@@ -1,0 +1,101 @@
+[
+    {
+        "label": "socket",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "socket",
+        "description": "socket",
+        "detail": "socket",
+        "documentation": {}
+    },
+    {
+        "label": "select",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "select",
+        "description": "select",
+        "detail": "select",
+        "documentation": {}
+    },
+    {
+        "label": "struct",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "struct",
+        "description": "struct",
+        "detail": "struct",
+        "documentation": {}
+    },
+    {
+        "label": "socketserver",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "socketserver",
+        "description": "socketserver",
+        "detail": "socketserver",
+        "documentation": {}
+    },
+    {
+        "label": "threading",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "threading",
+        "description": "threading",
+        "detail": "threading",
+        "documentation": {}
+    },
+    {
+        "label": "logging",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "logging",
+        "description": "logging",
+        "detail": "logging",
+        "documentation": {}
+    },
+    {
+        "label": "time",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "time",
+        "description": "time",
+        "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "SocksProxy",
+        "kind": 6,
+        "importPath": "socks5-to-burp",
+        "description": "socks5-to-burp",
+        "peekOfCode": "class SocksProxy(socketserver.StreamRequestHandler):\n    def handle(self):\n        logging.info(f\"Handling connection from {self.client_address}\")\n        try:\n            # SOCKS5 greeting header\n            header = self.connection.recv(2)\n            if len(header) != 2:\n                logging.error(\"Invalid greeting header\")\n                return\n            version, nmethods = struct.unpack(\"!BB\", header)",
+        "detail": "socks5-to-burp",
+        "documentation": {}
+    },
+    {
+        "label": "ThreadingTCPServer",
+        "kind": 6,
+        "importPath": "socks5-to-burp",
+        "description": "socks5-to-burp",
+        "peekOfCode": "class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):\n    allow_reuse_address = True\n    daemon_threads = True\n    max_connections = 100\n    def __init__(self, server_address, RequestHandlerClass):\n        super().__init__(server_address, RequestHandlerClass)\n        self.active_connections = 0\n        self.lock = threading.Lock()\n    def verify_request(self, request, client_address):\n        with self.lock:",
+        "detail": "socks5-to-burp",
+        "documentation": {}
+    },
+    {
+        "label": "connect_via_burp",
+        "kind": 2,
+        "importPath": "socks5-to-burp",
+        "description": "socks5-to-burp",
+        "peekOfCode": "def connect_via_burp(host, port):\n    \"\"\"Connect to the target host:port via Burp's HTTP proxy using CONNECT method.\"\"\"\n    logging.debug(f\"Connecting to Burp at 127.0.0.1:8080 for {host}:{port}\")\n    try:\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(10)\n        s.connect(('127.0.0.1', 8080))\n        connect_header = (\n            f\"CONNECT {host}:{port} HTTP/1.1\\r\\n\"\n            f\"Host: {host}:{port}\\r\\n\"",
+        "detail": "socks5-to-burp",
+        "documentation": {}
+    },
+    {
+        "label": "SOCKS_VERSION",
+        "kind": 5,
+        "importPath": "socks5-to-burp",
+        "description": "socks5-to-burp",
+        "peekOfCode": "SOCKS_VERSION = 5\ndef connect_via_burp(host, port):\n    \"\"\"Connect to the target host:port via Burp's HTTP proxy using CONNECT method.\"\"\"\n    logging.debug(f\"Connecting to Burp at 127.0.0.1:8080 for {host}:{port}\")\n    try:\n        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n        s.settimeout(10)\n        s.connect(('127.0.0.1', 8080))\n        connect_header = (\n            f\"CONNECT {host}:{port} HTTP/1.1\\r\\n\"",
+        "detail": "socks5-to-burp",
+        "documentation": {}
+    }
+]
