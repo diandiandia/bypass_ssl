@@ -1,0 +1,21 @@
+port: 1080
+
+
+auth:
+  enabled: false
+  users:
+    - username: user1
+      password: pass1
+    - username: user2
+      password: $2a$10$KbQiK9VxTiBCO7rTdpWw4uN0/ikY2vBtZn3j7YQzj3RbAqJgnXQIC  # 已哈希
+
+acl:
+  allow:
+ #   - ".example.com"
+  deny:
+ #   - ".blocked.com"
+proxy:
+  enabled: true
+  host: "127.0.0.1"
+  port: 8080
+  timeout: 10000

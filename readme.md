@@ -4,6 +4,24 @@
 
 Google Pixel 4/Android 13
 
+## 刷机
+下载Pixel4对应的固件，安装手机usb驱动
+```bash
+https://developers.google.cn/android/images?hl=zh-cn#flame
+https://developer.android.google.cn/studio/run/win-usb?hl=zh-cn
+```
+固件页面
+![alt text](./img/image-20250928112211221.png)
+
+usb驱动下载与安装
+
+![alt text](./img/screenshot-20250928-142021.png)
+![alt text](./img/image202509280011100110.png)
+
+
+![alt text](./img/image202509280011100111.png)
+![alt text](./img/image202509280011100112.png)
+
 ## Magisk刷机
 
 下载Magisk
@@ -349,6 +367,15 @@ if __name__ == '__main__':
 2025-09-21 21:32:33,510 - DEBUG - Client -> Remote (198.18.0.20:5228): 2435 bytes
 ```
 
+### 使用sock5**.jar
+为什么不集成到burp，因为extension的接口有initialise和initialize，新的burp的api好离谱啊，我放弃了。
+使用
+```bash
+java -jar .\jar\socks5-server-1.0.0.jar .\jar\config.yaml
+```
+如果你感兴趣，想自己集成到burp里面，项目代码在BurpSocks里面
+
+
 ## 手机安装证书
 
 ### burp证书
@@ -417,178 +444,80 @@ chmod +x fs64
 测试电脑端
 
 ```python
-// Native SSL 绕过脚本
-// 用于 Hook Android 应用的原生 SSL 验证函数
+function hook_java() {
+    if (Java.available) {
+        Java.perform(function () {
+            console.log("Java available");
 
-// 配置选项
-const CONFIG = {
-  debug: true,
-  maxMemoryScanSize: 1024 * 1024 * 10, // 最大扫描内存 (10MB)
-  stopAfterFirstMatch: true, // 找到第一个匹配后停止
-  nativeHook: {
-    enabled: true,
-    targetLibrary: 'libflutter.so',
-    pattern: 'FF C3 01 D1 FD 7B 01 A9 FC 6F 02 A9 FA 67 03 A9 F8 5F 04 A9 F6 57 05 A9 F4 4F 06 A9 08 0A 80 52 48 00 00 39'
-  }
-};
-
-// 工具函数模块
-const Utils = {
-  log: function(level, message) {
-    const prefixes = {
-      info: '[.]',
-      success: '[+]',
-      warning: '[-]',
-      error: '[!]',
-      debug: '[o]'
-    };
-    if (level === 'debug' && !CONFIG.debug) return;
-    console.log(`${prefixes[level] || '[?]'} ${message}`);
-  },
-  
-  checkModule: function(name) {
-    try {
-      return Process.findModuleByName(name) !== null;
-    } catch (e) {
-      return false;
+        });
     }
-  }
-};
-
-// 原生代码 Hook 管理器
-const NativeHookManager = {
-  scanMemoryForPattern: function(moduleName, pattern, callback) {
-    try {
-      const module = Process.findModuleByName(moduleName);
-      if (!module) {
-        Utils.log('error', `Module not found: ${moduleName}`);
-        return false;
-      }
-      
-      Utils.log('info', `Scanning module: ${module.name} (${module.base}-${module.base.add(module.size)})`);
-      
-      const ranges = module.enumerateRanges('r-x');
-      let found = false;
-      
-      for (let range of ranges) {
-        const scanSize = Math.min(range.size, CONFIG.maxMemoryScanSize);
-        Utils.log('debug', `Scanning range: ${range.base} - ${range.base.add(scanSize)}`);
-        
-        try {
-          const matches = Memory.scanSync(range.base, scanSize, pattern);
-          
-          for (let match of matches) {
-            Utils.log('success', `Found pattern match at address: ${match.address}`);
-            callback(match.address);
-            found = true;
-            
-            if (CONFIG.stopAfterFirstMatch) {
-              return true;
-            }
-          }
-        } catch (e) {
-          Utils.log('error', `Memory scan error: ${e.message}`);
-          continue;
-        }
-        
-        if (found && CONFIG.stopAfterFirstMatch) {
-          break;
-        }
-      }
-      
-      return found;
-    } catch (err) {
-      Utils.log('error', `Memory scanning failed: ${err.message}`);
-      return false;
-    }
-  },
-  
-  hookSslVerifyResult: function(address) {
-    try {
-      Interceptor.attach(address, {
-        onEnter: function(args) {
-          Utils.log('debug', 'Intercepted SSL verification');
-        },
-        onLeave: function(retval) {
-          Utils.log('debug', `ssl_verify_result at ${address}, original result: ${retval}`);
-          retval.replace(0x1);
-        }
-      });
-      
-      Utils.log('success', `Hooked ssl_verify_result at address: ${address}`);
-      return true;
-    } catch (err) {
-      Utils.log('error', `Failed to hook ssl_verify_result at ${address}: ${err.message}`);
-      return false;
-    }
-  },
-  
-  monitorLibraryLoading: function(libraryName) {
-    try {
-      Interceptor.attach(Module.getGlobalExportByName('android_dlopen_ext'), {
-        onEnter: function(args) {
-          try {
-            const loadedSoName = args[0].readCString();
-            if (loadedSoName && loadedSoName.indexOf(libraryName) >= 0) {
-              Utils.log('info', `Detected loading of target library: ${loadedSoName}`);
-              this.isTargetLibrary = true;
-            }
-          } catch (e) {
-            Utils.log('error', `Error reading library name: ${e.message}`);
-          }
-        },
-        onLeave: function(retval) {
-          if (this.isTargetLibrary) {
-            Utils.log('info', `Library ${libraryName} has been loaded, attempting to hook`);
-            NativeHookManager.hookLibrary(libraryName);
-          }
-        }
-      });
-      
-      Utils.log('success', `Monitoring library loading for: ${libraryName}`);
-      return true;
-    } catch (err) {
-      Utils.log('error', `Failed to set up library loading monitor: ${err.message}`);
-      return false;
-    }
-  },
-  
-  hookLibrary: function(libraryName) {
-    Utils.log('info', `Starting native hooks for ${libraryName}`);
-    
-    return this.scanMemoryForPattern(libraryName, CONFIG.nativeHook.pattern, (address) => {
-      if (address && !address.isNull()) {
-        this.hookSslVerifyResult(address);
-      }
-    });
-  }
-};
-
-// 主入口函数
-function hook_native() {
-  if (!CONFIG.nativeHook.enabled) {
-    Utils.log('info', 'Native hooking is disabled in configuration');
-    return;
-  }
-  
-  if (Process.arch !== 'arm64') {
-    Utils.log('warning', `This script is optimized for arm64 architecture, but running on ${Process.arch}`);
-  }
-  
-  Utils.log('info', 'Starting native SSL bypass hooks');
-  
-  try {
-    NativeHookManager.monitorLibraryLoading(CONFIG.nativeHook.targetLibrary);
-    if (Utils.checkModule(CONFIG.nativeHook.targetLibrary)) {
-      NativeHookManager.hookLibrary(CONFIG.nativeHook.targetLibrary);
-    }
-  } catch (err) {
-    Utils.log('error', `Native hook initialization failed: ${err.message}`);
-  }
 }
 
-// 启动 Native Hook
-setTimeout(hook_native, 0);
+function hook_ssl_verify_result(address) {
+    Interceptor.attach(address, {
+        onEnter: function (args) {
+            console.log("Disabling SSL validation")
+        },
+        onLeave: function (retval) {
+            console.log("ssl_verify_result: " + address);
+            console.log("Retval: " + retval);
+            retval.replace(0x1);
+        }
+    });
+}
+
+function hook_flutter() {
+    if (Process.arch == "arm64") {
+        var pattern = "FF C3 01 D1 FD 7B 01 A9 FC 6F 02 A9 FA 67 03 A9 F8 5F 04 A9 F6 57 05 A9 F4 4F 06 A9 08 0A 80 52 48 00 00 39";
+    } else {
+        var pattern = "2D E9 F0 4F 85 B0 06 46 50 20 10 70";
+    }
+
+    var m = Process.findModuleByName("libflutter.so");
+    if (!m) {
+        console.error("libflutter.so not found");
+        return;
+    }
+    console.log("libflutter.so base: " + m.base + ", size: " + m.size);
+    var ranges = m.enumerateRanges('r-x');
+    var found = false;
+    for (let range of ranges) {
+        console.log("Range: " + range.base + ", size: " + range.size + ", protection: " + range.protection);
+        var matches = Memory.scanSync(range.base, range.size, pattern);
+        matches.forEach(function (match) {
+            found = true;
+            if (Process.arch == 'arm64') {
+                var match_address = match.address
+                console.log("Match found at: " + match_address.toString());
+            } else {
+                match_address = match.address.add(0x1);
+                console.log("Match found at: " + match_address.toString());
+            }
+
+            hook_ssl_verify_result(match_address);
+        });
+        if (found) {
+            console.log("Match found in range: " + range.base + " - " + range.end);
+            break;
+        }
+    }
+    if (!found) {
+        console.log("Match not found");
+    }
+
+}
+
+function hook_native() {
+    hook_flutter();
+}
+
+
+function hook_all() {
+    hook_java();
+    hook_native();
+}
+
+setTimeout(hook_all, 0);
 ```
 
 此脚本用于关闭flutter的ssl pin
@@ -969,7 +898,7 @@ if (Java.available) {
 
 然后，再次进行抓包，可以看到，我们成功绕过了双向证书认证。
 
-![image-20250921223631654](/Users/zhangyuchao/Works/Projects/PythonProjects/bypass_ssl/img/image-20250921223631654.png)
+![image-20250921223631654](./img/image-20250921223631654.png)
 
 参考：https://bbs.kanxue.com/thread-283483-1.htm#msg_header_h2_2
 
